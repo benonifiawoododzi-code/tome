@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import { CartProvider } from "@/components/cart-provider";
@@ -23,6 +24,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             {children}
           </Shell>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );

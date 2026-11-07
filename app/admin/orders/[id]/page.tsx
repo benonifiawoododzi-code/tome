@@ -18,7 +18,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
       <h1 className="text-2xl font-semibold">{order.order_number}</h1>
       <p className="mt-2 text-muted">{order.full_name} · {order.phone} · {order.email}</p>
       <p className="mt-1">{order.address_line}, {order.city}, {order.region}</p>
-      <p className="mt-1 text-sm">Payment: {paymentLabel(order.payment_method)} {order.momo_number ? `· ${order.momo_number}` : ""}</p>
+      <p className="mt-1 text-sm">Payment: {paymentLabel(order.payment_method)} {order.momo_number ? `· ${order.momo_number}` : ""}{order.payment_method === "cod" ? "" : " · Moolre"}</p>
       <ul className="mt-6 space-y-2">
         {(items ?? []).map((item) => (
           <li key={item.title} className="flex justify-between"><span>{item.title} × {item.quantity}</span><span>{cedis(Number(item.unit_price) * item.quantity)}</span></li>

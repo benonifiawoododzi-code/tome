@@ -56,7 +56,7 @@ export function DeskShell({
             key={item.href}
             href={item.href}
             onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${on ? "bg-[#e7c98a] font-medium text-[#1c1915]" : "text-[#d7deea] hover:bg-white/10"}`}
+            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] ${on ? "bg-[#e7c98a] font-medium text-[#1c1915]" : "text-[#d7deea] hover:bg-white/10"}`}
           >
             <Icon name={item.icon} />
             <span className="flex-1">{item.label}</span>
@@ -72,7 +72,7 @@ export function DeskShell({
   );
 
   return (
-    <div className="min-h-screen bg-[#eef1f6] text-[#1c2430] lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="min-h-screen bg-[#f7f4fb] text-[#1c2430] lg:grid lg:grid-cols-[280px_1fr]">
       <aside className="hidden flex-col bg-[#121820] px-4 py-6 text-white lg:flex">
         <Link href="/admin" className="px-2">
           <span className="block font-serif text-2xl leading-none text-[#f6edd8]">Tome</span>
@@ -94,7 +94,7 @@ export function DeskShell({
         </div>
       ) : null}
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-black/5 bg-[#eef1f6]/95 px-4 py-3 backdrop-blur lg:px-8">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-black/5 bg-[#f7f4fb]/95 px-4 py-4 backdrop-blur lg:px-8">
           <button type="button" className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm lg:hidden" onClick={() => setOpen(true)}>Menu</button>
           <form action="/admin/products" className="min-w-0 flex-1">
             <label className="sr-only" htmlFor="desk-search">Search books</label>
@@ -112,7 +112,7 @@ export function DeskShell({
             </span>
           </Link>
         </header>
-        <main className="px-4 py-6 lg:px-8">{children}</main>
+        <main className="px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>
   );

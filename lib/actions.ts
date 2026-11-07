@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { cleanError } from "@/lib/format";
+import { cleanError, cedis } from "@/lib/format";
+import { paymentKeysReady, sendOrderMail, sendOrderSms, startMoolrePayment } from "@/lib/payments";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/queries";
 
@@ -49,6 +50,9 @@ export async function placeOrder(input: {
   notes: string;
   items: { product_id: string; quantity: number }[];
 }) {
+  if (input.paymentMethod !== "cod" && !paymentKeysReady()) {
+    return { error: "Moolre is not configured yet. Add the API user, public key, and account number on the server." };
+  }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("place_order", {
     p_full_name: input.fullName,
@@ -63,8 +67,44 @@ export async function placeOrder(input: {
     p_items: input.items,
   });
   if (error) return { error: cleanError(error.message) };
+  const order = data as { order_number: string; access_token: string; total: number };
+  const payment = await startMoolrePayment({
+    method: input.paymentMethod,
+    amount: Number(order.total),
+    phone: input.momoNumber || input.phone,
+    email: input.email,
+    reference: order.order_number,
+  });
+  if (payment.kind === "failed" || payment.kind === "unconfigured") {
+    return { error: payment.message, order };
+  }
+  const total = cedis(Number(order.total));
+  await Promise.all([
+    sendOrderMail({ to: input.email, orderNumber: order.order_number, total }),
+    sendOrderSms({ phone: input.phone, orderNumber: order.order_number, total }),
+  ]);
   revalidatePath("/");
-  return { order: data as { order_number: string; access_token: string; total: number } };
+  return {
+    order,
+    payment: payment.kind,
+    payUrl: payment.kind === "link" ? payment.url : undefined,
+    message: "message" in payment ? payment.message : undefined,
+  };
+}
+
+export async function confirmMoolreOtp(input: { reference: string; otp: string; method: string; phone: string; amount: number }) {
+  const payment = await startMoolrePayment({
+    method: input.method,
+    amount: input.amount,
+    phone: input.phone,
+    email: "",
+    reference: input.reference,
+    otp: input.otp,
+  });
+  if (payment.kind === "failed" || payment.kind === "unconfigured" || payment.kind === "otp") {
+    return { error: "message" in payment ? payment.message : "The code was not accepted." };
+  }
+  return { ok: true as const, message: "message" in payment ? payment.message : "Payment sent." };
 }
 
 export async function subscribeNewsletter(_state: { message: string; ok: boolean } | null, formData: FormData) {

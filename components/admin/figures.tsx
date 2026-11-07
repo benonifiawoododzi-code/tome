@@ -18,29 +18,45 @@ export function Sparkline({ values, color }: { values: number[]; color: string }
 }
 
 export function TrendChart({ orders, revenue }: { orders: number[]; revenue: number[] }) {
-  const width = 520;
-  const height = 220;
+  const width = 640;
+  const height = 280;
   const pad = 28;
   const maxOrders = Math.max(...orders, 1);
   const maxRevenue = Math.max(...revenue, 1);
-  const line = (series: number[], max: number) =>
-    series
-      .map((value, index) => {
-        const x = pad + (index / Math.max(series.length - 1, 1)) * (width - pad * 2);
-        const y = height - pad - (value / max) * (height - pad * 2);
-        return `${x},${y}`;
-      })
-      .join(" ");
+  const coords = (series: number[], max: number) =>
+    series.map((value, index) => {
+      const x = pad + (index / Math.max(series.length - 1, 1)) * (width - pad * 2);
+      const y = height - pad - (value / max) * (height - pad * 2);
+      return [x, y] as const;
+    });
+  const path = (series: number[], max: number) => coords(series, max).map(([x, y]) => `${x},${y}`).join(" ");
+  const area = (series: number[], max: number) => {
+    const points = coords(series, max);
+    const floor = height - pad;
+    return `M ${points[0][0]} ${floor} L ${points.map(([x, y]) => `${x} ${y}`).join(" L ")} L ${points[points.length - 1][0]} ${floor} Z`;
+  };
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 h-56 w-full" role="img" aria-label="Orders and revenue over the last four weeks">
+    <svg viewBox={`0 0 ${width} ${height}`} className="mt-2 h-72 w-full" role="img" aria-label="Orders and revenue over the last four weeks">
+      <defs>
+        <linearGradient id="order-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#7c5cff" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#7c5cff" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="revenue-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff7ab6" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#ff7ab6" stopOpacity="0" />
+        </linearGradient>
+      </defs>
       {[0, 1, 2, 3].map((row) => (
-        <line key={row} x1={pad} x2={width - pad} y1={pad + row * ((height - pad * 2) / 3)} y2={pad + row * ((height - pad * 2) / 3)} stroke="#e6ebf2" />
+        <line key={row} x1={pad} x2={width - pad} y1={pad + row * ((height - pad * 2) / 3)} y2={pad + row * ((height - pad * 2) / 3)} stroke="#eef1f6" />
       ))}
-      <polyline fill="none" stroke="#d4a24c" strokeWidth="3" strokeLinejoin="round" points={line(revenue, maxRevenue)} />
-      <polyline fill="none" stroke="#2f6fed" strokeWidth="3" strokeLinejoin="round" points={line(orders, maxOrders)} />
+      <path d={area(revenue, maxRevenue)} fill="url(#revenue-fill)" />
+      <path d={area(orders, maxOrders)} fill="url(#order-fill)" />
+      <polyline fill="none" stroke="#ff7ab6" strokeWidth="3" strokeLinejoin="round" points={path(revenue, maxRevenue)} />
+      <polyline fill="none" stroke="#7c5cff" strokeWidth="3" strokeLinejoin="round" points={path(orders, maxOrders)} />
       {orders.map((_, index) => (
-        <text key={index} x={pad + (index / Math.max(orders.length - 1, 1)) * (width - pad * 2)} y={height - 6} textAnchor="middle" fontSize="12" fill="#6b7280">
+        <text key={index} x={pad + (index / Math.max(orders.length - 1, 1)) * (width - pad * 2)} y={height - 6} textAnchor="middle" fontSize="13" fill="#6b7280">
           Week {index + 1}
         </text>
       ))}

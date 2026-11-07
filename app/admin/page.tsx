@@ -136,47 +136,50 @@ export default async function AdminHome() {
         </article>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr_0.7fr]">
-        <article className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+      <section className="grid gap-4 xl:grid-cols-[1fr_280px]">
+        <article className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium">Recent orders</h2>
-            <Link href="/admin/orders" className="text-sm text-[#2457c5]">View all</Link>
+            <div>
+              <h2 className="text-lg font-semibold">Order status</h2>
+              <p className="text-sm text-[#6b7280]">Every order on the desk</p>
+            </div>
+            <Link href="/admin/orders" className="rounded-lg bg-[#14382c] px-4 py-2 text-sm text-white">View all</Link>
           </div>
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs text-[#6b7280]">
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-base">
+              <thead className="bg-[#1c2430] text-xs tracking-wide text-white uppercase">
                 <tr>
-                  <th className="py-2 font-medium">Reader</th>
-                  <th className="font-medium">Order</th>
-                  <th className="font-medium">Placed</th>
-                  <th className="font-medium">Status</th>
-                  <th className="font-medium"></th>
+                  <th className="px-4 py-4 font-medium">Invoice</th>
+                  <th className="px-4 py-4 font-medium">Customer</th>
+                  <th className="px-4 py-4 font-medium">From</th>
+                  <th className="px-4 py-4 font-medium">Price</th>
+                  <th className="px-4 py-4 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.slice(0, 6).map((order) => (
-                  <tr key={order.id} className="border-t border-[#eef1f6]">
-                    <td className="py-3">
-                      <span className="flex items-center gap-2">
-                        <span className="grid h-8 w-8 place-items-center rounded-full bg-[#14382c] text-xs text-[#e7c98a]">{order.full_name.slice(0, 1)}</span>
-                        <span>
-                          <span className="block font-medium">{order.full_name}</span>
-                          <span className="block text-xs text-[#6b7280]">{order.city}</span>
-                        </span>
+                {orders.slice(0, 8).map((order) => (
+                  <tr key={order.id} className="border-b border-[#eef1f6]">
+                    <td className="px-4 py-5 font-medium">
+                      <Link href={`/admin/orders/${order.id}`} className="text-[#2457c5]">{order.order_number}</Link>
+                    </td>
+                    <td className="px-4 py-5">
+                      <span className="flex items-center gap-3">
+                        <span className="grid h-10 w-10 place-items-center rounded-full bg-[#14382c] text-sm text-[#e7c98a]">{order.full_name.slice(0, 1)}</span>
+                        <span className="font-medium">{order.full_name}</span>
                       </span>
                     </td>
-                    <td>{order.order_number}</td>
-                    <td className="text-[#6b7280]">{new Intl.DateTimeFormat("en-GH", { day: "numeric", month: "short", timeZone: "Africa/Accra" }).format(new Date(order.created_at))}</td>
-                    <td><StatusPill status={order.status} /></td>
-                    <td className="text-right"><Link href={`/admin/orders/${order.id}`} className="text-[#2457c5]">View</Link></td>
+                    <td className="px-4 py-5 text-[#6b7280]">{order.city}</td>
+                    <td className="px-4 py-5 font-medium">{cedis(Number(order.total))}</td>
+                    <td className="px-4 py-5"><StatusPill status={order.status} /></td>
                   </tr>
                 ))}
-                {orders.length === 0 ? <tr><td colSpan={5} className="py-6 text-[#6b7280]">No orders yet.</td></tr> : null}
+                {orders.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-[#6b7280]">No orders yet.</td></tr> : null}
               </tbody>
             </table>
           </div>
         </article>
 
+        <div className="space-y-4">
         <article className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
           <h2 className="font-medium">Desk</h2>
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -215,6 +218,7 @@ export default async function AdminHome() {
             ))}
           </ul>
         </article>
+        </div>
       </section>
     </div>
   );

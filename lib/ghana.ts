@@ -18,12 +18,23 @@ export const regions = [
 ] as const;
 
 export const paymentMethods = [
-  { id: "mtn_momo", label: "MTN Mobile Money", hint: "We send a prompt to the number you give us." },
-  { id: "telecel_cash", label: "Telecel Cash", hint: "Have the wallet phone nearby." },
-  { id: "at_money", label: "AT Money", hint: "AirtelTigo Money confirmation after checkout." },
-  { id: "card", label: "Visa or Mastercard", hint: "A staff member confirms the card charge before dispatch." },
-  { id: "cod", label: "Pay on delivery", hint: "Accra, Tema, and Kumasi only." },
+  { id: "mtn_momo", label: "MTN Mobile Money", hint: "Moolre sends a prompt to this number. Approve it with your PIN." },
+  { id: "telecel_cash", label: "Telecel Cash", hint: "Moolre sends a prompt to this number." },
+  { id: "at_money", label: "AT Money", hint: "Moolre sends a prompt to this number." },
+  { id: "card", label: "Visa or Mastercard", hint: "You finish the card payment on Moolre’s secure page." },
+  { id: "cod", label: "Pay on delivery", hint: "Accra, Tema, and Kumasi only. No online charge." },
 ] as const;
+
+export function ghanaLocal(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("233")) return `0${digits.slice(3)}`;
+  if (digits.startsWith("0")) return digits;
+  return `0${digits}`;
+}
+
+export function ghanaE164(phone: string) {
+  return `+233${ghanaLocal(phone).slice(1)}`;
+}
 
 export function shippingFor(region: string, subtotal: number) {
   if (region === "Greater Accra") return subtotal >= 250 ? 0 : 25;

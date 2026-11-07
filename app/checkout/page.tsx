@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
-import { placeOrder } from "@/lib/actions";
+import { confirmMoolreOtp, placeOrder } from "@/lib/actions";
 import { cedis } from "@/lib/format";
 import { paymentMethods, regions, shippingFor } from "@/lib/ghana";
 
@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState("mtn_momo");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [otpFor, setOtpFor] = useState<{ reference: string; method: string; phone: string; amount: number; token: string } | null>(null);
   const shipping = useMemo(() => shippingFor(region, subtotal), [region, subtotal]);
   const needsMomo = method === "mtn_momo" || method === "telecel_cash" || method === "at_money";
 
@@ -32,13 +33,48 @@ export default function CheckoutPage() {
       notes: String(formData.get("notes") ?? ""),
       items: items.map((item) => ({ product_id: item.id, quantity: item.quantity })),
     });
-    if (result.error || !result.order) {
+    if (!result.order) {
       setError(result.error ?? "The order did not go through.");
       setPending(false);
       return;
     }
+    if (result.payment === "otp") {
+      setOtpFor({
+        reference: result.order.order_number,
+        method,
+        phone: String(formData.get("momo") ?? formData.get("phone") ?? ""),
+        amount: Number(result.order.total),
+        token: result.order.access_token,
+      });
+      setError(result.message ?? "Enter the code sent to the wallet phone.");
+      setPending(false);
+      return;
+    }
+    if (result.error) {
+      setError(result.error);
+      setPending(false);
+      return;
+    }
     clear();
+    if (result.payUrl) {
+      window.location.href = result.payUrl;
+      return;
+    }
     router.push(`/checkout/success?token=${result.order.access_token}`);
+  }
+
+  async function onOtp(formData: FormData) {
+    if (!otpFor) return;
+    setPending(true);
+    setError(null);
+    const result = await confirmMoolreOtp({ ...otpFor, otp: String(formData.get("otp") ?? "") });
+    if (result.error) {
+      setError(result.error);
+      setPending(false);
+      return;
+    }
+    clear();
+    router.push(`/checkout/success?token=${otpFor.token}`);
   }
 
   if (items.length === 0) {
@@ -47,9 +83,10 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="space-y-4">
       <form action={onSubmit} className="space-y-4">
         <h1 className="font-serif text-5xl">Delivery</h1>
-        <p className="text-sm text-muted">We record the order and confirm payment before a rider leaves East Legon. Nothing is charged on this page.</p>
+        <p className="text-sm text-muted">Mobile money and cards are collected by Moolre. Pay on delivery is confirmed at the door.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <input name="fullName" required placeholder="Full name" className="rounded-2xl border border-line bg-card px-4 py-3" />
           <input name="email" type="email" required placeholder="Email" className="rounded-2xl border border-line bg-card px-4 py-3" />
@@ -74,8 +111,17 @@ export default function CheckoutPage() {
         {needsMomo ? <input name="momo" required placeholder="Mobile money number" className="w-full rounded-2xl border border-line bg-card px-4 py-3" /> : null}
         <textarea name="notes" placeholder="Note for the desk" className="w-full rounded-2xl border border-line bg-card px-4 py-3" rows={3} />
         {error ? <p className="text-clay">{error}</p> : null}
-        <button disabled={pending} className="rounded-full bg-forest px-6 py-3 text-paper">{pending ? "Placing order…" : "Place order"}</button>
+        <button disabled={pending || Boolean(otpFor)} className="rounded-full bg-forest px-6 py-3 text-paper">{pending ? "Placing order…" : "Place order"}</button>
       </form>
+      {otpFor ? (
+        <form action={onOtp} className="space-y-3 rounded-[2rem] bg-card p-6">
+          <h2 className="font-serif text-3xl">Wallet code</h2>
+          <p className="text-sm text-muted">Moolre sent a code to the wallet phone. Enter it to send the payment prompt.</p>
+          <input name="otp" required placeholder="Code" className="w-full rounded-2xl border border-line bg-white px-4 py-3" />
+          <button disabled={pending} className="rounded-full bg-forest px-6 py-3 text-paper">{pending ? "Checking…" : "Continue payment"}</button>
+        </form>
+      ) : null}
+      </div>
       <aside className="h-fit rounded-[2rem] bg-card p-6">
         <h2 className="font-serif text-3xl">Summary</h2>
         <ul className="mt-4 space-y-2 text-sm">
